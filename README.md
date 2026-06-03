@@ -135,6 +135,47 @@ To maximize query performance and eliminate data redundancy, the backend data ar
 12. How does professional driver performance grade out chronologically when evaluated via a multi-metric scorecard?
 
 ---
+## 🧹 Data Cleaning & Engineering Process
+
+All extraction, transformation, and data cleaning pipelines were executed within the **Power Query (M Engine)** environment to convert highly decentralized, unpolished raw transactional data into a pristine, relational Star Schema.
+
+### 1. Ingestion & Consolidated Referencing Architecture
+To prevent severe processing latency, a single **Master Connection** was established by targeting the source folder directory containing the 14 raw CSV files. 
+* To optimize system memory, the raw master folder query was restricted via unchecking **"Enable Load"**, preventing structural metadata from cluttering the data model.
+* All 14 operational tables were generated using the **Reference** method branching off the master directory. This architecture ensured that Power BI scans the hard drive exactly once, protecting refresh speeds and establishing a single point of failure for easy filepath configuration.
+
+### 2. Typographical Standardizations & Formatting Integrity
+Power Query's automatic type inference was overridden across key coordinates to secure exact calculations:
+* **Key/ID Formats:** Primary and foreign identifiers (`trip_id`, `truck_id`, `driver_id`, `load_id`) were explicitly cast to the **Text (ABC)** data type and standardized to **UPPERCASE**. This eliminated mismatches from inconsistent data entries (e.g., matching `"trk001"` with `"TRK001"`) and prevented Power BI from incorrectly executing mathematical operations on alphanumeric strings.
+* **Invisible Characters & Spacing:** To ensure perfect data matches during table joins, the `trip_id` and operational ID columns in all tables were processed using **Trim** (to purge leading/trailing whitespace) and **Clean** (to drop non-printable line breaks).
+* **Temporal Transformations:** Timestamps across fact records (e.g., `purchase_date` with active timestamps like `2023-10-22 05:00:00`) were transformed to a strict **Date Only** format to match the master calendar layout, preventing multi-hour lookup failures.
+* **Numeric Fields:** Structural quantities such as cargo `weight_lbs` were explicitly cast to **Whole Numbers**, and financial arrays (`revenue`, `total_cost`, `claim_amount`) were forced into **Fixed Decimal Numbers (Currency)**.
+
+### 3. Advanced Relational Engineering: Missing Identifier Resolution
+Exploratory analysis revealed an aggressive data gap: `trips.csv` contained ~1,600 missing truck records, while `fuel_purchases.csv` leaked ~3,800 records, which threatened to orphan thousands of transactions from the dimensional perimeter.
+
+* **Phase 1 (The Trip_ID Bridge):** A **Left Outer Join** was deployed by merging `fuel_purchases` and `trips` utilizing `trip_id` as the uniform match key. The operational match was validated at a complete match rate before expanding `driver_id` and `truck_id` columns into the target table.
+* **Phase 2 (Coalesce Logic):** To preserve historical transactions without duplicating steps, a custom structural formula was applied to dynamically repair empty strings (`""`) and technical `null` gaps:
+  ```powerquery
+  if [truck_id] = null or [truck_id] = "" then [truck_id.1] else [truck_id]
+
+Phase 3 (Secondary Driver-Truck Schedule Mapping): For remaining overlapping gaps where both files lacked a direct asset ID, a secondary reference table (DriverTruckMap) was engineered by isolating rows containing valid driver-to-truck assignments on specific dates. A multi-column merge was then executed, linking driver_id + date across both schemas to resolve hidden operational assignments. Remaining unresolvable entries (~2,000) were safely preserved as null to protect downstream maintenance analytics from arbitrary guessing.
+
+4. Data Auditing & Outlier Remediation (Unit Mismatches)
+Fuel Capacity Validation: To preserve the integrity of miles-per-gallon (MPG) analytics, fuel gallon purchases were cross-examined against the physical boundaries of each truck asset's tank. Fuel logs were joined with the dimension table to evaluate operational logic:
+
+if [gallons] > [tank_capacity_gallons] then "Error" else "Valid"
+
+Transactions showing impossible over-fueling volumes (e.g., a 500-gallon purchase logged against a 200-gallon tank capacity) were flagged and mathematically isolated to protect fuel economy baseline statistics.
+
+Text-in-Numeric Error Isolation: Data entry text strings hidden inside numeric weight arrays (such as "lbs" suffixes) were stripped, and any resultant data-type translation errors were captured and replaced with null values to preserve row availability without breaking analytical aggregations.
+
+5. Event Deduplication & SLA Baseline Security
+In the transactional tracking table delivery_events.csv, data redundancy threatened to artificially double total load counts and skew On-Time Delivery (OTD) service metrics.
+
+**Granular Row Scrubbing:** The entire dataset was scrubbed for 100% identical row duplicates.
+
+**SLA Event Governance:** To ensure each unique dispatch logged exactly one "Pickup" and one "Delivery" event, the data grid was explicitly sorted chronologically by actual_datetime (Ascending) before applying a targeted multi-column deduplication across the composite keys of load_id and event_type. This forced Power BI to preserve the true primary timestamp while safely dropping corrupt redundant records, guaranteeing a perfect mathematical denominator for all operational OTD KPIs.
 
 ---
 
@@ -158,7 +199,7 @@ To maximize query performance and eliminate data redundancy, the backend data ar
 
 **Finding 8 — Asset Failure Distribution:** Mechanical repair costs are heavily concentrated across specialized sub-components, identifying clear engineering categories where preventive cycles can reduce system downtime.
 
-✅** Tactical Recommendations**
+**✅ Tactical Recommendations**
 Deploy Fuel Optimization Systems: Target the $2.33M idle fuel leak by implementing strict automated engine-idle boundaries and optimizing regional refueling behaviors.
 
 Establish High-Yield Lane Allocations: Expand freight capacity across identified high-yield long-haul corridors (Oregon, California) to secure optimal revenue-per-mile returns.
@@ -178,7 +219,7 @@ Enforce Targeted Risk Interventions: Conduct focused safety workshops for the dr
 
 **GitHub Markdown:** Technical documentation compilation and repository presentation.
 
-**👤 About the Analyst**
+**👤 About the Analyst:**
 Data Analyst Specializing in turning complex, decentralized operational data into clear, strategic business insights. Proficient in database relationships, advanced data modeling, and dynamic visualization architectures.
 
 ---
@@ -231,4 +272,3 @@ Driver Risk Score Matrix =
         ([Driver Preventable Score] * PreventableWeight) + 
         ([Driver OTD Risk Score] * OTDWeight) + 
         ([Driver Idle Score] * IdleWeight)
-
