@@ -1,0 +1,120 @@
+================================================================================
+PROJECT NOTES: LOGISTICS & FLEET OPERATIONS PERFORMANCE DASHBOARD
+================================================================================
+Author: Festus O. Ejideaku
+Date: May 2026
+Project Status: Completed Capstone Deployment
+Target Audience: Operations Executives, Fleet Managers, and Code Reviewers
+================================================================================
+
+1. PROJECT BACKGROUND & OBJECTIVE
+--------------------------------------------------------------------------------
+The objective of this business intelligence project is to transform decentralized, 
+heterogeneous supply chain logs into a centralized strategic asset. By analyzing 
+historical fleet telemetry, fuel purchasing ledgers, maintenance records, and safety 
+incidents tracking 122M miles and 85K dispatches, this dashboard highlights clear 
+bottom-line cost leaks, driver tracking performance, and network delivery bottlenecks.
+
+The final architecture was consolidated into a streamlined 4-Page configuration 
+to maximize executive screen real estate and establish intuitive analytical drill-downs.
+
+
+2. ARCHITECTURAL DATA DICTIONARY & RELATIONSHIPS
+--------------------------------------------------------------------------------
+The data model uses a performance-optimized Star Schema built from 14 source files, 
+anchored to a central temporal dimension (Dim_Date) and linked across four fact tables:
+
+A. TRIPS LOGS FACT
+   - actual_distance_miles: Physical mileage traversed per dispatch.
+   - fuel_gallons_used: Total diesel gallons consumed during transit.
+   - idle_time_hours: Non-productive engine runtime hours.
+   - load_id / trip_id: Relational transactional keys.
+   - trip_status: Binary delivery tracking metric (True = On-Time, False = Delayed).
+
+B. FUEL PURCHASES FACT
+   - purchase_date: Transaction timestamp linked to Dim_Date[Date].
+   - total_cost: Raw cash layout for individual fueling events.
+   - gallons: Volume pumped during the purchase transaction.
+   - location_city / location_state: Geographic transaction tags.
+
+C. MAINTENANCE LOGS FACT
+   - downtime_hours: Hours an asset was non-operational due to service.
+   - maintenance_cost: Invoiced cost for parts and mechanical labor.
+   - asset_id (truck_id): Relational key linking back to the TRUCKS dimension.
+
+D. SAFETY EVENTS FACT
+   - incident_id: Unique asset exception key.
+   - incident_type: Categorized risk event (Accident, DOT Violation, Moving Violation).
+   - vehicle_damage_cost / cargo_damage_cost: Hard physical financial liabilities.
+   - preventable_flag / at_fault_flag: Risk governance qualifiers (1 = Yes, 0 = No).
+
+
+3. KEY CORE DAX METRICS & ASSUMPTIONS
+--------------------------------------------------------------------------------
+To maintain extreme mathematical accuracy across deep aggregations, the following 
+operational metrics were built using advanced DAX modeling best practices:
+
+* Gross Total Revenue 
+  Formula: [Base Linehaul Revenue] + [Total Accessorial Revenue]
+  Logic: Reference measures are nested for cleaner maintenance. If underlying linehaul 
+  or extra accessorial structures change, the master metric updates automatically.
+
+* Average Fleet MPG
+  Formula: DIVIDE(SUM('Trips'[actual_distance_miles]), SUM('Trips'[fuel_gallons_used]), 0)
+  Assumption: Direct column averaging (AVERAGE(Trips[average_mpg])) distorts true system 
+  performance. This measure divides total operational distance by total mass consumption 
+  for a true fleet-wide average baseline (Project Benchmark: 6.45 MPG).
+
+* Total Safety Incident Cost
+  Formula: SUM('Safety Incidents'[vehicle_damage_cost]) + SUM('Safety Incidents'[cargo_damage_cost])
+  Logic: Expresses the combined bottom-line risk liability by uniting physical equipment 
+  damage with freight insurance claims.
+
+* Idle Fuel Waste Cost
+  Formula: SUM('Trips'[idle_time_hours]) * [Dynamic Avg Fuel Price]
+  Assumption: Standard fleet baseline assumptions dictate that heavy-duty commercial 
+  power units consume roughly 1.0 gallon of diesel fuel per hour of idling. This calculates 
+  the exact financial waste incurred when trucks run engines while standing still.
+
+
+4. DASHBOARD PAGE LOGIC & METRIC MATRIX
+--------------------------------------------------------------------------------
+
+PAGE 1: EXECUTIVE FINANCIAL OVERVIEW
+- Captures top-line growth ($298.62M Gross Revenue), expenditures ($101.32M), 
+  and net profits ($197.30M).
+- Isolates revenue capture by core market segments, highlighting that Dedicated 
+  Contract Freight commands the largest share at 49.60% ($148.12M), followed by 
+  Spot Market Dispatches (25.26%) and Corporate Contracts (25.14%).
+
+PAGE 2: FLEET UTILIZATION & MAINTENANCE
+- Audits $5.73M in total upkeep expenses across 72.23K total downtime hours.
+- Incorporates horizontal rankings to isolate critical power unit outliers 
+  (e.g., TRK00003 accruing $90K in maintenance costs).
+- Categorizes repairs using a TreeMap to separate standard Preventive maintenance 
+  from systemic failures in Brake, Tire, or Transmission assemblies.
+
+PAGE 3: SUPPLY CHAIN LOGISTICS & ROUTE PROFITABILITY
+- Pinpoints severe network delays totaling 260,607 aggregate detention hours.
+- Leverages dual-axis visuals to map regional state revenues against lane distance, 
+  identifying Oregon ($40M), California, and Washington as core financial corridors.
+- Visualizes systemic delivery failures where delayed dispatches (55.67%) outpace 
+  on-time performance (44.33%).
+
+PAGE 4: FLEET EFFICIENCY & PERFORMANCE MATRIX
+- Consolidates fuel spend ($95.59M) alongside risk management records ($2.65M 
+  claims over 170 infractions).
+- Features an executive driver leaderboard scorecard using a Matrix visualization. 
+  By adding inline Sparklines (X-Axis: Month, Y-Axis: Score) and conditional gradient 
+  formatting, managers can visually identify underperforming drivers and track 
+  improvement over time.
+
+
+5. DATA MODEL GOVERNANCE & VERSION CONTROL
+--------------------------------------------------------------------------------
+- Version 1.0: Baseline draft mapping individual tables.
+- Version 2.0: Engineered Dim_Date table to support advanced time-intelligence, 
+  overriding Power BI's heavy auto-date/time structures.
+- Version 3.0: Deprecated Page 5. Consolidated driver scorecards, matrix leaderboards, 
+  and safety infraction data into Page 4 to optimize executive workflow and page real estate.
+================================================================================
