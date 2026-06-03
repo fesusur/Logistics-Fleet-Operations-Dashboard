@@ -159,9 +159,9 @@ Exploratory analysis revealed an aggressive data gap: `trips.csv` contained ~1,6
   ```powerquery
   if [truck_id] = null or [truck_id] = "" then [truck_id.1] else [truck_id]
 
-Phase 3 (Secondary Driver-Truck Schedule Mapping): For remaining overlapping gaps where both files lacked a direct asset ID, a secondary reference table (DriverTruckMap) was engineered by isolating rows containing valid driver-to-truck assignments on specific dates. A multi-column merge was then executed, linking driver_id + date across both schemas to resolve hidden operational assignments. Remaining unresolvable entries (~2,000) were safely preserved as null to protect downstream maintenance analytics from arbitrary guessing.
+* **Phase 3 (Secondary Driver-Truck Schedule Mapping):** For remaining overlapping gaps where both files lacked a direct asset ID, a secondary reference table (DriverTruckMap) was engineered by isolating rows containing valid driver-to-truck assignments on specific dates. A multi-column merge was then executed, linking driver_id + date across both schemas to resolve hidden operational assignments. Remaining unresolvable entries (~2,000) were safely preserved as null to protect downstream maintenance analytics from arbitrary guessing.
 
-4. Data Auditing & Outlier Remediation (Unit Mismatches)
+* **4. Data Auditing & Outlier Remediation (Unit Mismatches)**
 Fuel Capacity Validation: To preserve the integrity of miles-per-gallon (MPG) analytics, fuel gallon purchases were cross-examined against the physical boundaries of each truck asset's tank. Fuel logs were joined with the dimension table to evaluate operational logic:
 
 if [gallons] > [tank_capacity_gallons] then "Error" else "Valid"
@@ -170,7 +170,7 @@ Transactions showing impossible over-fueling volumes (e.g., a 500-gallon purchas
 
 Text-in-Numeric Error Isolation: Data entry text strings hidden inside numeric weight arrays (such as "lbs" suffixes) were stripped, and any resultant data-type translation errors were captured and replaced with null values to preserve row availability without breaking analytical aggregations.
 
-5. Event Deduplication & SLA Baseline Security
+* **5. Event Deduplication & SLA Baseline Security**
 In the transactional tracking table delivery_events.csv, data redundancy threatened to artificially double total load counts and skew On-Time Delivery (OTD) service metrics.
 
 **Granular Row Scrubbing:** The entire dataset was scrubbed for 100% identical row duplicates.
@@ -219,7 +219,9 @@ Enforce Targeted Risk Interventions: Conduct focused safety workshops for the dr
 
 **GitHub Markdown:** Technical documentation compilation and repository presentation.
 
+
 **👤 About the Analyst:**
+
 Data Analyst Specializing in turning complex, decentralized operational data into clear, strategic business insights. Proficient in database relationships, advanced data modeling, and dynamic visualization architectures.
 
 ---
@@ -239,6 +241,7 @@ Net Fleet Profit = [Gross Total Revenue] - [Total Operational Expenses]
 
 Revenue Per Operational Mile = DIVIDE([Gross Total Revenue], SUM('trips'[actual_distance_miles]))
 
+
 Efficiency & Spend Metrics
 Total Fuel Cost = SUM('fuel_purchases'[total_cost])
 
@@ -248,6 +251,7 @@ Idle Fuel Waste Cost = SUM('trips'[idle_fuel_waste_dollars])
 
 Average MPG Performance = AVERAGE('trips'[average_mpg])
 
+
 Logistics & SLA Compliance
 On-Time Delivery (OTD) Rate = 
     DIVIDE(
@@ -256,6 +260,7 @@ On-Time Delivery (OTD) Rate =
     )
 
 Total Network Detention Hours = SUM('delivery_events'[detention_hours])
+
 
 Risk & Upkeep Formulations
 Total Maintenance Costs = SUM('maintenance_records'[total_cost])
